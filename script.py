@@ -4,15 +4,29 @@ from selenium.webdriver.support.ui import Select
 
 import time
 
+winter = "01"
+summer = "05"
+fall = "09"
+
+
+# Variables to be set by the user
+#----------------------------------
+#----------------------------------
 
 student_id = "username"
 password = "password"
 
-term = "202505"
+year = 2025
+season = winter
 subject = "PHYS"
 course_number = "183"
 type = "Lecture"
 
+#----------------------------------
+#----------------------------------
+
+
+term = str(year) + season
 options = webdriver.ChromeOptions()
 options.add_argument('--headless')
 options.add_argument('--no-sandbox')
