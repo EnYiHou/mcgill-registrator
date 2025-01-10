@@ -1,0 +1,9 @@
+# vscode
+.history
+
+# python
+__pycache__/
+venv/
+
+# mac
+.DS_Store
