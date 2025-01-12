@@ -48,8 +48,7 @@ def register(CRN):
 
 
 
-def check_availability():
-
+def login():
     driver.get("https://horizon.mcgill.ca/pban1/twbkwbis.P_WWWLogin")
 
 
@@ -63,10 +62,27 @@ def check_availability():
     login_button = driver.find_element(by=By.ID, value="mcg_id_submit")
     login_button.click()
 
+    print("Logged in successfully.")
+
+
+def is_logged_in():
+    try:
+        driver.find_element(By.XPATH, "//h2[text()='User Login']")
+        return False
+    except:
+        return True
 
 
 
+def check_availability():
     term_selection_url = "https://horizon.mcgill.ca/pban1/bwskfcls.p_sel_crse_search"
+
+    driver.get(term_selection_url)
+    time.sleep(1)
+    
+    if not is_logged_in():
+        login()
+
     driver.get(term_selection_url)
 
     term_selection_input = driver.find_element(by=By.NAME, value="p_term")
