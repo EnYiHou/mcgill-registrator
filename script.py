@@ -12,13 +12,14 @@ class Course:
         SUMMER = "05"
         FALL = "09"
 
-    def __init__(self, year, season, subject, course_number, type):
+    def __init__(self, year, season, subject, course_number, type, to_replace_CRN=None):
         self.year = year
         self.season = season
         self.subject = subject
         self.course_number = course_number
         self.type = type
         self.term = str(year) + season.value
+        self.to_replace_CRN = to_replace_CRN
 
     def __str__(self):
         return f"{self.subject} {self.course_number} ({self.type}) - {self.term}"
@@ -30,10 +31,9 @@ class Course:
 
 student_id = "username"
 password = "password"
-
 courses = [
     Course(2025, Course.Season.WINTER, "PHYS", "183", "Lecture"),
-    Course(2025, Course.Season.WINTER, "COMP", "250", "Lecture"),
+    Course(2025, Course.Season.WINTER, "COMP", "250", "Lecture", "417"),
     Course(2025, Course.Season.WINTER, "COMP", "322", "Lecture"),
 ]
 
@@ -42,18 +42,42 @@ courses = [
 
 
 options = webdriver.ChromeOptions()
-options.add_argument('--headless')
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-dev-shm-usage')
+# options.add_argument('--headless')
+# options.add_argument('--no-sandbox')
+# options.add_argument('--disable-dev-shm-usage')
 driver = webdriver.Chrome(options=options)
 
 
-def register(CRN):
+def register(CRN, to_replace_CRN):
+
     print("Attempting to register...")
     register_button = driver.find_element(
         By.CSS_SELECTOR, "input[type='submit'][name='ADD_BTN'][value*='Register']"
     )
     register_button.click()
+
+    if to_replace_CRN:
+        print(f"Attempting to replace CRN: {to_replace_CRN}")
+        table = driver.find_element(By.XPATH, "//table[@summary='Current Schedule']")
+        rows = table.find_elements(By.XPATH, ".//tr[td]")
+        dropped = False
+        
+        for row in rows:
+            row_crn = row.find_element(By.XPATH, ".//input[@name='CRN_IN']").get_attribute("value")
+            
+            if row_crn == to_replace_CRN:
+                # Locate the dropdown for "Action" (name="RSTS_IN")
+                select_element = row.find_element(By.NAME, "RSTS_IN")
+                select = Select(select_element)
+
+                select.select_by_value("DW")
+                print(f"Successfully selected Web Drop for CRN: {to_replace_CRN}")
+                dropped = True
+                break
+
+        if not dropped:
+            print(f"Failed to locate CRN: {to_replace_CRN} in schedule")
+                    
 
     CRN_input = driver.find_element(by=By.ID, value="crn_id1")
     CRN_input.send_keys(CRN)
@@ -207,15 +231,15 @@ if __name__ == "__main__":
             driver.quit()
             exit()
         print(f"Remaining courses:\n\t{'\n\t'.join([str(course) for course in courses])}")
-        for course in courses:
+        for course in courses[:]:
             print(f"\nChecking availability for {course}")
             crn, title, available = check_availability(course)
             if available:
-                register(crn)
+                register(crn, course.to_replace_CRN)
                 if check_registration(title):
                     print(f"Successfully registered for {title}")
+                    courses.remove(course)      
                 else:
                     print(f"Failed to register for {title}")
-                courses.remove(course)
-                break
+
         time.sleep(5)
